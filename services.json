@@ -1,0 +1,241 @@
+{
+  "production": [
+    {
+      "name": "system-of-record",
+      "type": "system-of-record",
+      "github": "https://github.com/LandRegistry/system-of-record",
+      "heroku": "lr-system-of-record",
+      "url": "http://lr-system-of-record.herokuapp.com/",
+      "port": 8000,
+      "tech": [
+        "python",
+        "flask"
+      ],
+      "dependencies": [
+        "postgres",
+        "the-feeder"
+      ]
+    },
+    {
+      "name": "mint",
+      "type": "mint",
+      "github": "https://github.com/LandRegistry/mint",
+      "heroku": "lr-mint",
+      "url": "http://lr-mint.herokuapp.com/",
+      "port": 8001,
+      "tech": [
+        "python",
+        "flask"
+      ],
+      "dependencies": [
+        "system-of-record"
+      ]
+    },
+    {
+      "name": "casework-frontend",
+      "type": "casework-service",
+      "github": "https://github.com/LandRegistry/casework-frontend",
+      "heroku": "lr-casework-frontend",
+      "url": "http://casework.landregistryconcept.co.uk",
+      "port": 8004,
+      "tech": [
+        "python",
+        "flask"
+      ],
+      "dependencies": [
+        "mint"
+      ]
+    },
+    {
+      "name": "property-frontend",
+      "type": "gov-service",
+      "github": "https://github.com/LandRegistry/property-frontend",
+      "heroku": "lr-property-frontend",
+      "url": "http://www.gov.uk.landregistryconcept.co.uk",
+      "port": 8002,
+      "tech": [
+        "python",
+        "flask"
+      ],
+      "dependencies": [
+        "search-api"
+      ]
+    },
+    {
+      "name": "service-frontend",
+      "type": "land-service",
+      "github": "https://github.com/LandRegistry/service-frontend",
+      "heroku": "lr-service-frontend",
+      "url": "http://lr-service-frontend.herokuapp.com",
+      "port": 8007,
+      "tech": [
+        "python",
+        "flask"
+      ],
+      "dependencies": [
+        "search-api",
+        "postgres",
+        "decision",
+        "casework-frontend"
+      ]
+    },
+    {
+      "name": "search-api",
+      "type": "search-index",
+      "github": "https://github.com/LandRegistry/search-api",
+      "heroku": "lr-search-api",
+      "url": "http://lr-search-api.herokuapp.com",
+      "port": 8003,
+      "tech": [
+        "python",
+        "flask"
+      ],
+      "dependencies": [
+        "elastic-search"
+      ]
+    },
+    {
+      "name": "the-feeder",
+      "type": "queue",
+      "github": "https://github.com/LandRegistry/the-feeder",
+      "heroku": "lr-feeder-app",
+      "url": null,
+      "port": null,
+      "tech": [
+        "python"
+      ],
+      "dependencies": [
+        "redis",
+        "search-api"
+      ]
+    },
+    {
+      "name": "decision",
+      "type": "micro-service",
+      "github": "https://github.com/LandRegistry/decision",
+      "heroku": "lr-decision",
+      "url": null,
+      "port": null,
+      "tech": [
+        "python"
+      ],
+      "dependencies": []
+    },
+    {
+      "name": "matching",
+      "type": "micro-service",
+      "github": "https://github.com/LandRegistry/matching",
+      "heroku": "lr-match",
+      "url": null,
+      "port": null,
+      "tech": [
+        "python"
+      ],
+      "dependencies": [
+        "service-frontend"
+      ]
+    },
+    {
+      "name": "ownership",
+      "type": "micro-service",
+      "github": "https://github.com/LandRegistry/ownership",
+      "heroku": "lr-ownership",
+      "url": null,
+      "port": null,
+      "tech": [
+        "python",
+        "flask"
+      ],
+      "dependencies": [
+        "service-frontend"
+      ]
+    },
+    {
+      "name": "introductions",
+      "type": "micro-service",
+      "github": "https://github.com/LandRegistry/introductions",
+      "heroku": "lr-introduction-service",
+      "url": null,
+      "port": null,
+      "tech": [
+        "python",
+        "flask"
+      ],
+      "dependencies": [
+        "service-frontend"
+      ]
+    },
+    {
+      "name": "cases",
+      "type": "micro-service",
+      "github": "https://github.com/LandRegistry/cases",
+      "heroku": "lr-cases",
+      "url": null,
+      "port": null,
+      "tech": [
+        "python",
+        "flask"
+      ],
+      "dependencies": [
+        "service-frontend",
+        "casework-frontend"
+      ]
+    }
+  ],
+  "development": [
+    {
+      "name": "test-dashboard",
+      "github": "https://github.com/LandRegistry/test-dashboard",
+      "heroku": "lr-test-dashboard",
+      "url": "http://lr-test-dashboard.herokuapp.com",
+      "port": 7357,
+      "tech": [
+        "python",
+        "flask"
+      ],
+      "dependencies": [
+        "travis"
+      ]
+    },
+    {
+      "name": "build-dashboard",
+      "github": "https://github.com/LandRegistry/build-dashboard",
+      "heroku": "lr-build-dashboard",
+      "url": "http://lr-build-dashboard.herokuapp.com",
+      "port": 8888,
+      "tech": [
+        "python",
+        "flask"
+      ],
+      "dependencies": [
+        "travis"
+      ]
+    },
+    {
+      "name": "pull-dashboard",
+      "github": "https://github.com/LandRegistry/pull-dashboard",
+      "heroku": "lr-pull-dashboard",
+      "url": "http://lr-pull-dashboard.herokuapp.com",
+      "port": 8888,
+      "tech": [
+        "python",
+        "flask"
+      ],
+      "dependencies": [
+        "github"
+      ]
+    },
+    {
+      "name": "team-dashboard",
+      "github": "https://github.com/LandRegistry/team-dashboard",
+      "heroku": "http://lr-team-dashboard",
+      "url": "http://team-dashboard.landregistryconcept.co.uk",
+      "port": 5000,
+      "tech": [
+        "python",
+        "flask"
+      ],
+      "dependencies": []
+    }
+  ]
+}
