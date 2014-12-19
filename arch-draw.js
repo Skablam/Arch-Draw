@@ -1,100 +1,87 @@
-function showTip(d,i) {
+function processLinks(json) {
 
-  // Hover over code
-  $('<div class="ttip"></div>')
-  .text(d.name)
-  .append('<hr>')
-  .append('<p>Source code:  ' + d.github + '</p>')
-  .append('<p>Technology:  ' + d.tech + '</p>')
-  .append('<p>Dependencies:  ' + d.dep + '</p>')
-  .appendTo('body');
+  var serviceIndex = -1;
 
-  $('.ttip').fadeIn('slow');
-}
+  //adding links to json
 
-function removeTip() {
+  for (var i = 0; i < json.nodes.length; i++) {
 
-  // Hover out code
-  $('.ttip').remove();
+    serviceIndex++;
 
-}
+    service = json.nodes[i];
 
-var coordinates = [0,0]; //mouse coordinates for node tooltip position
+    for (var j = 0; j < service.dep.length; j++) {
 
-d3.select('html') // Selects the 'html' element
-.on('mousemove', function()
-{
+      //find node for dependency
+      json.nodes.forEach(function(obj, k){
 
-  // Gets the mouse coordinates with respect to the top of the page
-  //This is required for the position of the tooltip for the nodes
-  coordinates = d3.mouse(this);
-});
+        if (obj.name == service.dep[j]) {
 
-//mouse over event for a node
-function mouseMove() {
+          var link = {};
 
-  //position the tooltip near to the mouse position
-  $('.ttip').css({ top: coordinates[1] + 10, left: coordinates[0] + 20 })
+          link["source"] = serviceIndex;
+          link["target"] = k;
+          link["value"] = 1;
 
-}
+          json.links.push(link);
 
-//on click event for a node
-function onNodeClick(d) {
+        }
 
-  window.location = d.github;
+      });
+
+    };
+
+  };
+
 
 };
 
-var json = {"nodes": [], "links": []};
+function processNodes(service, json) {
 
-var data; // a global
+  var node = {};
 
-function DrawArchitecture() {
+  node["name"] = service.name;
+  node["github"] = service.github;
+  node["url"] = service.url;
+  node["port"] = service.port;
+  node["type"] = service.type;
+  node["heroku"] = service.heroku;
+  node["database"] = service.database;
+
+  var tech = [];
+
+  for (var j = 0; j < service.tech.length; j++) {
+
+    tech.push(service.tech[j]);
+
+  };
+
+  node["tech"] = tech;
+
+  var dependencies = [];
+
+  for (var j = 0; j < service.dependencies.length; j++) {
+
+    dependencies.push(service.dependencies[j]);
+
+  };
+
+  node["dep"] = dependencies;
+
+  json.nodes.push(node);
+
+};
+
+function loadDataFromFile(data) {
+
+  var json = {"nodes": [], "links": []};
 
   //adding nodes to json
   for (var i = 0; i < data.production.length; i++) {
 
     service = data.production[i];
 
-    var node = {};
-
-    node["name"] = service.name;
-    node["no"] = i;
-    node["github"] = service.github;
-    node["url"] = service.url;
-    node["port"] = service.port;
-    node["type"] = service.type;
-    node["heroku"] = service.heroku;
-
-    var tech = "";
-
-    for (var j = 0; j < service.tech.length; j++) {
-
-      if (j==0) {
-        tech = service.tech[0];
-      } else {
-        tech = tech + " " + service.tech[j];
-      };
-
-    };
-
-    node["tech"] = tech;
-
-    var dependencies = "";
-
-    for (var j = 0; j < service.dependencies.length; j++) {
-
-      if (j==0) {
-        dependencies = service.dependencies[0];
-      } else {
-        dependencies = dependencies + " " + service.dependencies[j];
-      };
-
-    };
-
-    node["dep"] = dependencies;
-
-    json.nodes.push(node);
+    processNodes(service, json);
 
   }
 
@@ -131,49 +118,116 @@ function DrawArchitecture() {
 
   };
 
-  var width = 1200,
-  height = 600
+  return json;
 
-  var svg = d3.select("body").append("svg")
-  .attr("width", width)
-  .attr("height", height);
+};
+
+function downloadFile(url, callback) {
+
+  function createCORSRequest(method, url) {
+    var xhr = new XMLHttpRequest();
+    if ("withCredentials" in xhr) {
+
+      // Check if the XMLHttpRequest object has a "withCredentials" property.
+      // "withCredentials" only exists on XMLHTTPRequest2 objects.
+      xhr.open(method, url, false);
+
+    } else if (typeof XDomainRequest != "undefined") {
+
+      // Otherwise, check if XDomainRequest.
+      // XDomainRequest only exists in IE, and is IE's way of making CORS requests.
+      xhr = new XDomainRequest();
+      xhr.open(method, url);
+
+    } else {
+
+      // Otherwise, CORS is not supported by the browser.
+      xhr = null;
+
+    }
+    return xhr;
+  }
+
+  var xhr = createCORSRequest('GET', url);
+  if (!xhr) {
+    throw new Error('CORS not supported');
+  }
+
+  // Response handlers.
+  xhr.onload = function() {
+    var text = xhr.responseText;
+    //convert to JSON, get the value of content and decode from base64
+    //then convert the decoded content string to json
+    callback(JSON.parse(atob(JSON.parse(text).content)));
+  };
+
+  xhr.onerror = function() {
+    throw exception;
+  };
+
+  xhr.send();
+};
+
+function loadDataFromRepos(data) {
+
+  var json = {"nodes": [], "links": []};
+
+  function downloadCallback(responseText) {
+    processNodes(responseText, json);
+  };
+
+  data.repos.forEach( function(repo_name, i) {
+
+    downloadFile(repo_name, downloadCallback);
+
+    processLinks(json);
+
+  });
+
+  //TODO: Check if it is a python app
+
+  //TODO: Get requirements.txt for dependencies
+
+  //TODO: Add python dependencies to json
+
+  //TODO: Check if it is a java app
+
+  //TODO: Get dependencies from POM?
+
+  //TODO: How do we get apps/dependencies called via HTTP?
+
+  return json;
+
+};
+
+function drawArchitecture(options, json) {
 
   var force = d3.layout.force()
-  .gravity(1)
-  .distance(100)
   .charge(-10000)
-  .size([width, height]);
+  .linkDistance(150)
+  .gravity(1)
+  .linkStrength(5)
+  .size([options.width, options.height]);
 
+  var svg = d3.select("#"+options.id).append("svg")
+  .attr("width", options.width)
+  .attr("height", options.height);
 
-  //initialise position of frontend and system-of-record nodes
-  for (i = 0; i < json.nodes.length; i++) {
-
-    switch(json.nodes[i].name) {
-      case "property-frontend":
-        json.nodes[i].x = 900;
-        json.nodes[i].y = 100;
-        json.nodes[i].fixed = true;
-        break;
-        case "casework-frontend":
-          json.nodes[i].x = 300;
-          json.nodes[i].y = 100;
-          json.nodes[i].fixed = true;
-          break;
-          case "service-frontend":
-            json.nodes[i].x = 600;
-            json.nodes[i].y = 100;
-            json.nodes[i].fixed = true;
-            break;
-            case "system-of-record":
-              json.nodes[i].x = 600;
-              json.nodes[i].y = 500;
-              json.nodes[i].fixed = true;
-              break;
-              default:
-                json.nodes[i].y = 300;
-    }
-
-  }
+  //create tooltip div to be used later
+  var tooltip = d3.select("body").append("div")
+  .attr("class", "tooltip")
+  .style("position","absolute")
+  .style("opacity", 0)
+  .style("text-align","center")
+  .style("width","300px")
+  .style("height","115px")
+  .style("border-radius","8px")
+  .style("border","0px")
+  .style("padding","2px")
+  .style("font-size","12px")
+  .style("font-family","sans-serif")
+  .style("pointer-events","none")
+  .style("background","lightsteelblue");
 
   force
   .nodes(json.nodes)
@@ -182,50 +236,241 @@ function DrawArchitecture() {
   //Build the directional arrows for the links/edges
   svg.append("svg:defs")
   .selectAll("marker")
-  .data(["end"])
+  .data(["mid"])
   .enter().append("svg:marker")
-  .attr("id", String)
+  .attr("id", "linkMarker")
   .attr("viewBox", "0 -5 10 10")
   .attr("markerWidth", 3)
   .attr("markerHeight", 3)
+  .attr("fill", "#aaa")
   .attr("orient", "auto")
   .append("svg:path")
   .attr("d", "M0,-5L10,0L0,5");
 
   var link = svg.selectAll(".link")
   .data(json.links)
-  .enter()
-  .append("polyline")
-  .style("stroke-width", 2)
-  .attr("marker-mid", "url(#end)")
-  .attr("class", "link");
+  .enter().append("path")
+  .attr("marker-mid", "url(#linkMarker)")
+  .attr("class", "link")
+  .style("stroke", "#ccc")
+  .style("stroke-width", 3);
 
-  var node = svg.selectAll(".node")
+  var nodes = svg.selectAll(".node")
   .data(json.nodes)
   .enter().append("g")
   .attr("class", "node")
+  .on("mouseover", function(d) {
+    tooltip.transition()
+    .duration(200)
+    .style("opacity", .9);
+    tooltip
+    .style("left", (d3.event.pageX + 5) + "px")
+    .style("top", (d3.event.pageY - 28) + "px")
+    .html(function(){
+      return "<p>Source code: " + d.github + " (double click service to go to github)</p>" +
+        "<p> Technology: " + d.tech + " </p>" +
+        "<p>Dependencies: " + d.dep + " </p>";
+    })
+  })
+  .on("mouseout", function(d) {
+    tooltip.transition()
+    .duration(500)
+    .style("opacity", 0);
+  })
   .call(force.drag);
 
-  //add an image to the node
-  node.append("image")
-  .attr("xlink:href", function(d) { return "images/micro-service.png"} )
-  .attr("x", -45)
-  .attr("y", -25)
-  .attr("width", 50)
-  .attr("height", 50);
+  cylinder = svg.selectAll("defs").append("g")
+  .attr("class", "cylinder")
+  .attr("id","cylinder");
 
-  //add the name of the node to the picture
-  node.append("text")
-  .attr("dx", 12)
-  .attr("dy", ".35em")
-  .text(function(d) { return d.name });
+  cylinder.append("ellipse")
+  .attr("rx","8")
+  .attr("ry","4")
+  .attr("cx","12")
+  .attr("cy","17")
+  .attr("stroke","#FFFFFF");
 
-  node.on("mouseover", showTip)
-  .on("mouseout", removeTip)
-  .on("mousemove", mouseMove)
-  .on("dblclick", onNodeClick)
+  cylinder.append("rect")
+  .attr("width", "16")
+  .attr("height", "12")
+  .attr("x", "4")
+  .attr("y", "5")
+  .attr("fill", "#000000")
+  .attr("stroke", "none")
 
-  //fixed position of node if a user moves it
+  cylinder.append("ellipse")
+  .attr("rx","8")
+  .attr("ry","4")
+  .attr("cx","12")
+  .attr("cy","5")
+  .attr("stroke","#FFFFFF");
+
+  cylinder.append("line")
+  .attr("x1","4.0")
+  .attr("x2","4.0")
+  .attr("y1","5.0")
+  .attr("y2","17.0")
+  .attr("stroke","#FFFFFF");
+
+  cylinder.append("line")
+  .attr("x1","20.0")
+  .attr("x2","20.0")
+  .attr("y1","5.0")
+  .attr("y2","17.0")
+  .attr("stroke","#FFFFFF");
+
+  smiley = svg.selectAll("defs").append("g")
+  .attr("class","smiley")
+  .attr("id","smiley");
+
+  smiley.append("circle")
+  .attr("cx","12")
+  .attr("cy","12")
+  .attr("r","8")
+  .attr("stroke","white")
+  .attr("fill","black");
+
+  smiley.append("circle")
+  .attr("cx","9")
+  .attr("cy","8")
+  .attr("r","1")
+  .attr("stroke","white")
+  .attr("fill", "white");
+
+  smiley.append("circle")
+  .attr("cx","15")
+  .attr("cy","8")
+  .attr("r","1")
+  .attr("stroke","white")
+  .attr("fill", "white");
+
+  smiley.append("ellipse")
+  .attr("cx","12")
+  .attr("cy","15")
+  .attr("rx","5")
+  .attr("ry", "2")
+  .attr("stroke","white")
+  .attr("fill","black");
+
+  smiley.append("ellipse")
+  .attr("cx","12")
+  .attr("cy","13")
+  .attr("rx","5")
+  .attr("ry", "2")
+  .attr("stroke","black")
+  .attr("fill","black");
+
+  lg = svg.select("defs").selectAll("linearGradient").data(["backend","frontend"])
+  .enter()
+  .append("linearGradient")
+  .attr("id",String)
+  .attr("gradientUnits","objectBoundingBox")
+  .attr("x1","1")
+  .attr("x2","1")
+  .attr("y1","0")
+  .attr("y2","1");
+
+  lg.append("stop")
+  .attr("stop-color", function(d){ if (d=="frontend") {return "#990000"} else {return "#014373"};})
+  .attr("class","light-color")
+  .attr("offset","0");
+
+  lg.append("stop")
+  .attr("stop-color",function(d){ if (d=="frontend") {return "#770000"} else {return "#012473"};})
+  .attr("class","medium-color")
+  .attr("offset","0.67");
+
+  filter = svg.selectAll("defs")
+  .append("filter")
+  .attr("id","virtual_light")
+  .attr("filterUnits","objectBoundingBox")
+  .attr("x","-0.1")
+  .attr("y","-0.1")
+  .attr("width","1.2")
+  .attr("height","1.2");
+
+  filter.append("feGaussianBlur")
+  .attr("in","SourceAlpha")
+  .attr("stdDeviation","0.5")
+  .attr("result","alpha_blur");
+
+  filter.append("feOffset")
+  .attr("in", "alpha_blur")
+  .attr("dx","4")
+  .attr("dy","4")
+  .attr("result","offset_alpha_blur");
+
+  filter.append("feSpecularLighting")
+  .attr("in","alpha_blur")
+  .attr("surfaceScale","5")
+  .attr("specularConstant","1")
+  .attr("specularExponent","20")
+  .attr("lighting-color","#FFFFFF")
+  .attr("result","spec_light")
+  .append("fePointLight")
+  .attr("x","-5000")
+  .attr("y","-10000")
+  .attr("z","10000");
+
+  filter.append("feComposite")
+  .attr("in","spec_light")
+  .attr("in2","SourceAlpha")
+  .attr("operator","in")
+  .attr("result","spec_light");
+
+  filter.append("feComposite")
+  .attr("in","SourceGraphic")
+  .attr("in2","spec_light")
+  .attr("operator","out")
+  .attr("result","spec_light_fill");
+
+  merge = filter.append("feMerge");
+
+  merge.append("feMergeNode").attr("in","offset_alpha_blur");
+  merge.append("feMergeNode").attr("in","spec_light_fill");
+
+  rect = nodes.append("rect")
+  .attr("width", "50")
+  .attr("height", "50")
+  .attr("rx", "5")
+  .attr("ry", "5")
+  .attr("fill", function(d) { if (d.type=="back-end") { return "url(#backend)"} else { return "url(#frontend)"};})
+  .attr("class","dark-colour")
+  .attr("stroke", function(d) { if (d.type=="back-end") { return "#000173";} else { return "#360000"};})
+  .attr("filter","url(#virtual_light)");
+
+  nodes.append("text")
+  .text(function(d) { return d.name; })
+  .attr("x", 57)
+  .attr("y", 27)
+  .style("font", "12px sans-serif");
+
+  nodes
+  .each(function(d) {
+    var node = d3.select(this);
+
+    if (d.database=="true") {
+
+      node.append("use")
+      .attr("xlink:href","#cylinder")
+      .attr("x", "27")
+      .attr("y", "27");
+
+    };
+
+  });
+
+  //on click event for a node
+  function onNodeDoubleClick(d) {
+
+    window.location = d.github;
+
+  };
+
+  nodes
+  .on("dblclick", onNodeDoubleClick);
+
+  //fix position of node if a user moves it
   function dragstart(d) {
     d3.select(this).classed("fixed", d.fixed = true);
   }
@@ -235,31 +480,122 @@ function DrawArchitecture() {
 
   force.on("tick", function() {
 
-    link.attr("points", function(d) {
-      return d.source.x + "," + d.source.y + " " +
-      (d.source.x + d.target.x)/2 + "," + (d.source.y + d.target.y)/2 + " " +
-      d.target.x + "," + d.target.y; });
+    // Make the links link to the centre of each node,
+    //also, add a third point in the middle of the line in order
+    //add a marker to it
+    link.attr("d", function(d) {
+      return "M" +
+      (d.source.x + 25) + "," +
+      (d.source.y + 25) + "L" +
+      (d.source.x + 25  + d.target.x + 25)/2 + "," + (d.source.y + 25 + d.target.y + 25)/2 +
+      "L" +
+      (d.target.x + 25) + "," +
+      (d.target.y + 25);  });
 
-      node.attr('y', function(d) {  return d.y; });
-      node.attr('x', function(d) {  return d.x; });
-
-      node.attr("transform", function(d) {
-        return "translate(" + d.x + "," + d.y + ")";
-      } //function
-    ); //attr
-  }); //force.on
+    // Translate the nodes
+    nodes.attr("transform", function(d) {
+      return "translate(" + [d.x, d.y] + ")";
+    });
+  });
 
   force.start();
   //force only 50 ticks
   for (var i = 50; i > 0; --i) force.tick();
   force.stop();
 
-  console.log(json);
+  if (options.addLegend == true) {
+
+    legend = svg.append("g")
+    .attr("class","legend")
+    .attr("width","155")
+    .attr("height","200");
+
+    legend.append("text")
+    .attr("x", 50)
+    .attr("y", 20)
+    .text("Legend")
+    .style("font", "14px sans-serif");
+
+    legend.append("rect")
+    .attr("width","155")
+    .attr("height","200")
+    .attr("stroke", "black")
+    .attr("fill","none");
+
+    legend.append("rect")
+    .attr("width", "50")
+    .attr("height", "50")
+    .attr("rx", "5")
+    .attr("ry", "5")
+    .attr("x", 5)
+    .attr("y", 30)
+    .attr("fill", "url(#frontend)")
+    .attr("stroke", "#360000")
+    .attr("filter","url(#virtual_light)");
+
+    legend.append("text")
+    .text("frontend service")
+    .attr("x", 62)
+    .attr("y", 60)
+    .style("font", "12px sans-serif");
+
+    legend.append("rect")
+    .attr("width", "50")
+    .attr("height", "50")
+    .attr("rx", "5")
+    .attr("ry", "5")
+    .attr("x", 5)
+    .attr("y", 90)
+    .attr("fill", "url(#backend)")
+    .attr("stroke", "#000173")
+    .attr("filter","url(#virtual_light)");
+
+    legend.append("text")
+    .text("backend service")
+    .attr("x", 62)
+    .attr("y", 120)
+    .style("font", "12px sans-serif");
+
+    legend.append("use")
+    .attr("xlink:href","#cylinder")
+    .attr("x", 20)
+    .attr("y", 160);
+
+    legend.append("text")
+    .text("has a database")
+    .attr("x", 62)
+    .attr("y", 175)
+    .style("font", "12px sans-serif");
+
+
+
+    legend.attr("transform", function(d) {
+      return "translate(" + [options.width-156, options.height/2 - 150] + ")";
+    });
+
+  };
 
 };
 
-d3.json("services.json", function(error, services_json) {
-  if (error) return console.warn(error);
-  data = services_json;
-  DrawArchitecture();
-});
+function archDraw(options) {
+  var data;
+
+  if (options.drawFromCode == true) {
+
+    d3.json("repos.json", function(error, repos) {
+      if (error) return console.warn(error);
+      data = loadDataFromRepos(repos);
+      drawArchitecture(options, data)
+    });
+
+  } else {
+
+    d3.json("services.json", function(error, services_json) {
+      if (error) return console.warn(error);
+      data = loadDataFromFile(services_json);
+      drawArchitecture(options, data)
+    });
+
+  };
+
+};

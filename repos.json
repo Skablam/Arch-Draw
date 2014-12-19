@@ -1,0 +1,13 @@
+{"repos" : ["https://api.github.com/repos/LandRegistry/casework-frontend/contents/service.json",
+            "https://api.github.com/repos/LandRegistry/mint/contents/service.json",
+            "https://api.github.com/repos/LandRegistry/system-of-record/contents/service.json",
+            "https://api.github.com/repos/LandRegistry/the-feeder/contents/service.json",
+            "https://api.github.com/repos/LandRegistry/search-api/contents/service.json",
+            "https://api.github.com/repos/LandRegistry/property-frontend/contents/service.json",
+            "https://api.github.com/repos/LandRegistry/service-frontend/contents/service.json",
+            "https://api.github.com/repos/LandRegistry/introductions/contents/service.json",
+            "https://api.github.com/repos/LandRegistry/ownership/contents/service.json",
+            "https://api.github.com/repos/LandRegistry/matching/contents/service.json",
+            "https://api.github.com/repos/LandRegistry/cases/contents/service.json"
+            ]
+}
