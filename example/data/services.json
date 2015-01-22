@@ -1,6 +1,19 @@
 {
   "production": [
     {
+      "name": "feeder-queue",
+      "type": "queue",
+      "github": "",
+      "heroku": "",
+      "url": "",
+      "database": "false",
+      "tech": [
+        "redis"
+      ],
+      "dependencies": [
+      ]
+    },
+    {
       "name": "system-of-record",
       "type": "back-end",
       "github": "https://github.com/LandRegistry/system-of-record",
@@ -14,7 +27,7 @@
       ],
       "dependencies": [
         "postgres",
-        "the-feeder"
+        "feeder-queue"
       ]
     },
     {
@@ -116,7 +129,7 @@
         "python"
       ],
       "dependencies": [
-        "redis",
+        "feeder-queue",
         "search-api"
       ]
     },
@@ -195,62 +208,6 @@
       "dependencies": [
         "postgres"
       ]
-    }
-  ],
-  "development": [
-    {
-      "name": "test-dashboard",
-      "github": "https://github.com/LandRegistry/test-dashboard",
-      "heroku": "lr-test-dashboard",
-      "url": "http://lr-test-dashboard.herokuapp.com",
-      "port": 7357,
-      "tech": [
-        "python",
-        "flask"
-      ],
-      "dependencies": [
-        "travis"
-      ]
-    },
-    {
-      "name": "build-dashboard",
-      "github": "https://github.com/LandRegistry/build-dashboard",
-      "heroku": "lr-build-dashboard",
-      "url": "http://lr-build-dashboard.herokuapp.com",
-      "port": 8888,
-      "tech": [
-        "python",
-        "flask"
-      ],
-      "dependencies": [
-        "travis"
-      ]
-    },
-    {
-      "name": "pull-dashboard",
-      "github": "https://github.com/LandRegistry/pull-dashboard",
-      "heroku": "lr-pull-dashboard",
-      "url": "http://lr-pull-dashboard.herokuapp.com",
-      "port": 8888,
-      "tech": [
-        "python",
-        "flask"
-      ],
-      "dependencies": [
-        "github"
-      ]
-    },
-    {
-      "name": "team-dashboard",
-      "github": "https://github.com/LandRegistry/team-dashboard",
-      "heroku": "http://lr-team-dashboard",
-      "url": "http://team-dashboard.landregistryconcept.co.uk",
-      "port": 5000,
-      "tech": [
-        "python",
-        "flask"
-      ],
-      "dependencies": []
     }
   ]
 }
