@@ -12,3 +12,12 @@ It uses [d3](http://d3js.org/) to draw the architecture and uses data in one of 
 Below is an example of what can be drawn:
 
 ![Example 1](screenshots/arch-example-1.png)
+
+The red components are frontend applications.
+The blue ones are backend applications.
+The little buckets are queues.
+The cylinders are databases.
+
+What you can't see from the picture above is that you can drag each component around to re-arrange the architecture as you want, and when hovering over a component it displays details of that component.
+
+Finally, if a url for the component has been supplied, you can double click the component and it will take you to the source code.

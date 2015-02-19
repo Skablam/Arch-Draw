@@ -41,7 +41,7 @@ function processNodes(service, json) {
   var node = {};
 
   node["name"] = service.name;
-  node["github"] = service.github;
+  node["code_url"] = service.code_url;
   node["url"] = service.url;
   node["port"] = service.port;
   node["type"] = service.type;
@@ -268,7 +268,7 @@ function drawArchitecture(options, json) {
     .style("top", (d3.event.pageY - 28) + "px")
     .html(function(){
       var type = "<p>Type: " + d.type + "</p>";
-      var sourceCode = ((d.github == "") ? "" : "<p>Source code: " + d.github + " (double click service to go to github)</p>");
+      var sourceCode = ((d.code_url == "" || d.code_url == null) ? "" : "<p>Source code: " + d.code_url + " (double click to go to code repository)</p>");
       var tech = ((d.tech == "") ? "" : "<p>Technology: " + d.tech + " </p>");
       var dep = ((d.dep == "") ? "" : "<p>Dependencies: " + d.dep + " </p>");
       return type + sourceCode + tech + dep;
@@ -448,10 +448,13 @@ function drawArchitecture(options, json) {
       case "queue":
         return "white";
         break;
+      case "database":
+        return "white";
+        break;
       };  })
-  .attr("stroke", function(d) { if (d.type=="queue") { return "white"}
+  .attr("stroke", function(d) { if (d.type=="queue" || d.type=="database") { return "white"}
                                 else { return ((d.type=="back-end") ? "#000173" : "#360000")}})
-  .attr("filter",function(d) { return (((d.type=="queue")) ? "none" : "url(#virtual_light)")});
+  .attr("filter",function(d) { return (((d.type=="queue" || d.type=="database")) ? "none" : "url(#virtual_light)")});
 
   nodes.append("text")
   .text(function(d) { return d.name; })
@@ -482,12 +485,62 @@ function drawArchitecture(options, json) {
 
     };
 
+    if (d.type == "database") {
+
+      bigDatabase = node.append("g")
+      .attr("fill","#cc00ff")
+      .attr("style","stroke-width:3;fill-opacity:1");
+
+      bigDatabase.append("ellipse")
+      .attr("rx","25")
+      .attr("ry","10")
+      .attr("cx","25")
+      .attr("cy","40")
+      .attr("fill","#cccccc")
+      .attr("stroke","#000000");
+
+      bigDatabase.append("rect")
+      .attr("width","50")
+      .attr("height","30")
+      .attr("x","0")
+      .attr("y","10")
+      .attr("fill","#cccccc")
+      .attr("stroke","none");
+
+      bigDatabase.append("ellipse")
+      .attr("rx","25")
+      .attr("ry","10")
+      .attr("cx","25")
+      .attr("cy","10")
+      .attr("fill","#cccccc")
+      .attr("stroke","#000000");
+
+      bigDatabase.append("line")
+      .attr("x1","0")
+      .attr("y1","10")
+      .attr("x2","0")
+      .attr("y2","40")
+      .attr("fill","#cccccc")
+      .attr("stroke","#000000");
+
+      bigDatabase.append("line")
+      .attr("x1","50")
+      .attr("y1","10")
+      .attr("x2","50")
+      .attr("y2","40")
+      .attr("fill","#cccccc")
+      .attr("stroke","#000000");
+
+    };
+
   });
 
   //on click event for a node
   function onNodeDoubleClick(d) {
 
-    window.location = d.github;
+    if (!(d.code_url=="") && !(d.code_url==null)) {
+      window.location = d.code_url;
+    };
 
   };
 
@@ -599,7 +652,7 @@ function addLegend(options) {
   .attr("y", 175)
   .style("font", "12px sans-serif");
 
-  queueRect = legend.append("rect")
+  legend.append("rect")
   .attr("width", "50")
   .attr("height", "50")
   .attr("rx", "5")
